@@ -30,6 +30,10 @@
   .session-container { padding:16px; display:none; }
   .session-header { margin-bottom:16px; }
   .session-title { font-family:'Black Han Sans',sans-serif; font-size:1.3rem; letter-spacing:1px; margin-bottom:4px; }
+  .session-title-wrap { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .session-title-input { font-family:'Black Han Sans',sans-serif; font-size:1.3rem; letter-spacing:1px; background:transparent; border:none; border-bottom:1px dashed #444; color:var(--text); outline:none; padding:2px 0; flex:1; min-width:0; }
+  .session-title-input:focus { border-bottom-color:var(--accent); }
+  .title-edit-icon { font-size:0.8rem; color:var(--text-dim); flex-shrink:0; }
   .week-indicator { font-size:0.72rem; color:var(--accent); margin-top:8px; }
   .exercise-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; }
   .exercise-card.done { border-color:rgba(0,229,255,0.5); background:rgba(0,229,255,0.04); }
@@ -212,6 +216,8 @@ function stopAlarm(){ if(alarmInterval){clearInterval(alarmInterval);alarmInterv
 async function requestWakeLock(){ try{ if('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
 document.addEventListener('visibilitychange',async()=>{ if(wakeLock!==null&&document.visibilityState==='visible') await requestWakeLock(); });
 
+function loadDayTitle(pk,day){ return lsGet('fwdaytitle_'+pk+'_'+day, DAY_TITLES[day]); }
+function saveDayTitle(pk,day,v){ lsSet('fwdaytitle_'+pk+'_'+day, v||DAY_TITLES[day]); renderRecordIfOpen(); }
 function setToday(){ const d=['일','월','화','수','목','금','토']; const n=new Date(); const dn=d[n.getDay()]; document.getElementById('today-date').textContent=`${n.getMonth()+1}/${n.getDate()}(${dn})`; if(DAYS.includes(dn)) currentDay=dn; }
 
 function switchMainTab(tab){
@@ -248,7 +254,9 @@ function renderSessions(){
       const div=document.createElement('div');
       div.className='session-container'; div.id=`session-${pk}-${day}`;
       div.style.display=(pk===currentPlan&&day===currentDay)?'block':'none';
-      let html=`<div class="session-header"><div class="session-title">${DAY_TITLES[day]}</div>
+      const dayTitle=loadDayTitle(pk,day);
+      let html=`<div class="session-header">
+        <div class="session-title-wrap"><input class="session-title-input" type="text" value="${dayTitle}" placeholder="부위 입력" onchange="saveDayTitle('${pk}','${day}',this.value)"><span class="title-edit-icon">✎</span></div>
         <div class="week-indicator">📍 현재 <b>${currentWeek}주차</b> 기록 중 (기록 탭에서 변경)</div></div>`;
       for(let slot=0; slot<SLOTS; slot++){
         html+=renderCard(pk,day,slot);
@@ -366,7 +374,7 @@ function renderRecordView(){
       }
       cards+=`<div class="record-card"><div class="record-week-row">${cells}</div></div>`;
     }
-    if(cards) html+=`<div class="record-section"><div class="record-section-title">${day}요일 — ${DAY_TITLES[day]}</div>${cards}</div>`;
+    if(cards) html+=`<div class="record-section"><div class="record-section-title">${day}요일 — ${loadDayTitle(currentPlan,day)}</div>${cards}</div>`;
   });
   c.innerHTML=html||'<div style="color:var(--text-dim);padding:20px;text-align:center;">운동 이름을 입력하고 완료하면 여기에 기록됩니다</div>';
 }
