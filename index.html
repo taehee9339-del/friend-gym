@@ -170,17 +170,28 @@ function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:v; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 // 이름/렙/rpe: 플랜+요일+슬롯 (주차 무관, 영구)
 function exKey(pk,day,slot){ return `fw_${pk}_${day}_${slot}`; }
-function loadName(pk,day,slot){ return lsGet('fwname_'+currentWeek+'_'+exKey(pk,day,slot),''); }
+// 현재 주차에 값이 있으면 그걸, 없으면 이전 주차로 거슬러 올라가 가장 가까운 값을 반환 (자동 복사 효과)
+function inheritGet(prefix, pk,day,slot, suffix){
+  for(let w=currentWeek; w>=1; w--){
+    const v=localStorage.getItem(`${prefix}_${w}_${exKey(pk,day,slot)}${suffix}`);
+    if(v!==null && v!=='') return v;
+  }
+  return '';
+}
+function loadName(pk,day,slot){ return inheritGet('fwname',pk,day,slot,''); }
 function saveNameV(pk,day,slot,v){ lsSet('fwname_'+currentWeek+'_'+exKey(pk,day,slot),v); renderRecordIfOpen(); }
-function loadNameWeek(pk,day,slot,w){ return lsGet('fwname_'+w+'_'+exKey(pk,day,slot),''); }
-function loadReps(pk,day,slot){ return lsGet('fwreps_'+currentWeek+'_'+exKey(pk,day,slot),''); }
+function loadNameWeek(pk,day,slot,w){
+  for(let ww=w; ww>=1; ww--){ const v=localStorage.getItem('fwname_'+ww+'_'+exKey(pk,day,slot)); if(v!==null&&v!=='') return v; }
+  return '';
+}
+function loadReps(pk,day,slot){ return inheritGet('fwreps',pk,day,slot,''); }
 function saveRepsV(pk,day,slot,v){ lsSet('fwreps_'+currentWeek+'_'+exKey(pk,day,slot),v); }
-function loadRpe(pk,day,slot){ return lsGet('fwrpe_'+currentWeek+'_'+exKey(pk,day,slot),''); }
+function loadRpe(pk,day,slot){ return inheritGet('fwrpe',pk,day,slot,''); }
 function saveRpeV(pk,day,slot,v){ lsSet('fwrpe_'+currentWeek+'_'+exKey(pk,day,slot),v); }
-// 무게/횟수/메모: 주차별
-function loadSetVal(pk,day,slot,type,i){ return lsGet(`fwset_${type}_${currentWeek}_${exKey(pk,day,slot)}_${i}`,''); }
+// 무게/횟수/메모: 주차별 (이전 주차 자동 상속)
+function loadSetVal(pk,day,slot,type,i){ return inheritGet('fwset_'+type,pk,day,slot,'_'+i); }
 function saveSetValV(pk,day,slot,type,i,v){ lsSet(`fwset_${type}_${currentWeek}_${exKey(pk,day,slot)}_${i}`,v); }
-function loadMemo(pk,day,slot){ return lsGet(`fwmemo_${currentWeek}_${exKey(pk,day,slot)}`,''); }
+function loadMemo(pk,day,slot){ return inheritGet('fwmemo',pk,day,slot,''); }
 function saveMemoV(pk,day,slot,v){ lsSet(`fwmemo_${currentWeek}_${exKey(pk,day,slot)}`,v); }
 // 볼륨기록 STORE
 let STORE={};
